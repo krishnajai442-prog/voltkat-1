@@ -1,26 +1,139 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --font-sans:
+    var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display:
+    var(--font-space-grotesk), var(--font-inter), ui-sans-serif, system-ui,
+    sans-serif;
+
+  --color-canvas: #f4f6fb;
+  --color-paper: #ffffff;
+  --color-hairline: #e6eaf3;
+
+  --color-ink-950: #05070f;
+  --color-ink-900: #0a1024;
+  --color-ink-700: #1f2937;
+  --color-ink-400: #6b7385;
+  --color-ink-300: #9aa3b2;
+
+  --color-electric-50: #eef4ff;
+  --color-electric-100: #dbe7ff;
+  --color-electric-200: #bfd3ff;
+  --color-electric-300: #93b4ff;
+  --color-electric-400: #5b8cff;
+  --color-electric-500: #2563ff;
+  --color-electric-600: #1d4ed8;
+  --color-electric-700: #1e40af;
+
+  --color-violet-accent: #7c3aed;
+  --color-mint-500: #10b981;
+  --color-mint-600: #059669;
+
+  --color-flame-500: #ef4444;
+  --color-flame-600: #dc2626;
+
+  --color-amber-offer: #f59e0b;
+  --color-orange-deal: #f97316;
+
+  --shadow-soft:
+    0 1px 2px rgb(10 16 36 / 0.04), 0 8px 24px rgb(10 16 36 / 0.06);
+  --shadow-lift: 0 12px 32px rgb(10 16 36 / 0.12);
+  --shadow-glow:
+    0 0 0 1px rgb(37 99 255 / 0.08), 0 12px 36px rgb(37 99 255 / 0.18);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@layer base {
+  * {
+    border-color: var(--color-hairline);
+  }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  html {
+    scroll-behavior: smooth;
+    background: #f1f3f6; /* light gray like Flipkart — kills the dark flash on first paint */
+    min-height: 100%;
+  }
+
+  body {
+    background: #f1f3f6;
+    color: var(--color-ink-900);
+    min-height: 100vh;
+  }
+  /* var(--color-canvas); */
+
+  ::selection {
+    background: color-mix(in oklab, var(--color-electric-500) 22%, transparent);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  .container-x {
+    width: 100%;
+    margin-inline: auto;
+    max-width: 90rem;
+    padding-inline: 1rem;
+  }
+
+  @media (min-width: 640px) {
+    .container-x {
+      padding-inline: 1.25rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .container-x {
+      padding-inline: 1.5rem;
+    }
+  }
+
+  .card {
+    background: var(--color-paper);
+    border: 1px solid var(--color-hairline);
+    border-radius: 1.25rem;
+    box-shadow: var(--shadow-soft);
+  }
+
+  .glass {
+    background: rgb(255 255 255 / 0.86);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgb(230 234 243 / 0.9);
+    border-radius: 1.25rem;
+    box-shadow: var(--shadow-lift);
+  }
+}
+
+@layer utilities {
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .flipkart-card {
+    @apply bg-white rounded-sm shadow-sm hover:shadow-lg transition-shadow duration-200;
+  }
+}
+
+@keyframes ticker-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
