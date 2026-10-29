@@ -45,7 +45,7 @@ type CheckoutLine = {
   stock: number;
   inStock: boolean;
   codEligible: boolean;
-  // Optional enrichment — rendered only when /api/cart/quote provides them.
+  // Optional enrichment Ã¢â‚¬â€ rendered only when /api/cart/quote provides them.
   color?: string | null;
   ratingAvg?: number | null;
   ratingCount?: number | null;
@@ -154,7 +154,7 @@ export function CheckoutWizard({
   );
 
   // Context `user` resolves AFTER first paint (session fetch), so addressMode can latch
-  // to "new" for logged-in users and the summary card then renders "—" placeholders.
+  // to "new" for logged-in users and the summary card then renders "Ã¢â‚¬â€" placeholders.
   // Re-latch to the saved book once the session lands; a shopper who later toggles to
   // "new" keeps their choice because these deps never change again.
   useEffect(() => {
@@ -509,7 +509,7 @@ export function CheckoutWizard({
 
     await clearLocalCart();
     toast.push({ title: "Order placed", body: "Cash on delivery confirmed." });
-    router.push(`/order/${json.order.orderNumber}`);
+    router.push(`/order/${json.order.orderNumber}/response`);
   }
 
   async function startOnlinePayment() {
@@ -599,7 +599,7 @@ export function CheckoutWizard({
         if (verifyJson.orderNumber) {
           await clearLocalCart();
           toast.push({ title: "Payment successful", body: "Order confirmed." });
-          router.push(`/order/${verifyJson.orderNumber}`);
+          router.push(`/order/${verifyJson.orderNumber}/response`);
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Payment verification failed.");
@@ -692,9 +692,9 @@ export function CheckoutWizard({
         lastSavedAddrSig.current = sig;
         toast.push({ title: "Address saved", body: "Added to your saved addresses." });
       }
-      // On failure we deliberately do NOT throw — the order still uses the snapshot.
+      // On failure we deliberately do NOT throw Ã¢â‚¬â€ the order still uses the snapshot.
     } catch {
-      /* network hiccup — non-blocking */
+      /* network hiccup Ã¢â‚¬â€ non-blocking */
     }
   }
 
@@ -747,7 +747,7 @@ export function CheckoutWizard({
   const etaLabel = `${new Date(checkoutQuote.etaFrom).toLocaleDateString("en-IN", {
     day: "numeric",
     month: "short",
-  })} – ${new Date(checkoutQuote.etaTo).toLocaleDateString("en-IN", {
+  })} Ã¢â‚¬â€œ ${new Date(checkoutQuote.etaTo).toLocaleDateString("en-IN", {
     day: "numeric",
     month: "short",
   })}`;
@@ -764,17 +764,17 @@ export function CheckoutWizard({
           tag: savedAddress.label,
           line: [savedAddress.line1, savedAddress.line2, savedAddress.city, savedAddress.state]
             .filter(Boolean)
-            .join(", ") + ` — ${savedAddress.pincode}`,
+            .join(", ") + ` Ã¢â‚¬â€ ${savedAddress.pincode}`,
           phone: savedAddress.phone,
         }
       : {
-          name: addressForm.fullName || "—",
+          name: addressForm.fullName || "Ã¢â‚¬â€",
           tag: null as string | null,
           line:
             [addressForm.line1, addressForm.line2, addressForm.city, addressForm.state]
               .filter(Boolean)
-              .join(", ") + (addressForm.pincode ? ` — ${addressForm.pincode}` : ""),
-          phone: addressForm.phone || "—",
+              .join(", ") + (addressForm.pincode ? ` Ã¢â‚¬â€ ${addressForm.pincode}` : ""),
+          phone: addressForm.phone || "Ã¢â‚¬â€",
         };
 
   const stepLabels = ["Address", "Order Summary", "Payment"];
@@ -816,7 +816,7 @@ export function CheckoutWizard({
 
             {user && addresses.length > 0 && addressMode === "new" && (
               <Button size="sm" variant="outline" onClick={() => setAddressMode("saved")}>
-                ← Use a saved address
+                Ã¢â€ Â Use a saved address
               </Button>
             )}
 
@@ -915,7 +915,7 @@ export function CheckoutWizard({
                   </div>
                 </div>
 
-                {/* Controlled PIN checker — value + status live in the parent */}
+                {/* Controlled PIN checker Ã¢â‚¬â€ value + status live in the parent */}
                 <PincodeChecker
                   value={addressForm.pincode}
                   onChange={(v) => setAddressForm((prev) => ({ ...prev, pincode: v }))}
@@ -1022,7 +1022,7 @@ export function CheckoutWizard({
                         </p>
                       )}
                       <p className="mt-1.5 flex flex-wrap items-baseline gap-1.5">
-                        {d > 0 && <span className="text-[13px] font-bold text-emerald-600">↓{d}%</span>}
+                        {d > 0 && <span className="text-[13px] font-bold text-emerald-600">Ã¢â€ â€œ{d}%</span>}
                         {d > 0 && (
                           <span className="text-[12.5px] text-ink-300 line-through">{inr(line.mrp * line.quantity)}</span>
                         )}
@@ -1067,13 +1067,13 @@ export function CheckoutWizard({
                 <DeliveryOption
                   active={deliveryMode === "STANDARD"}
                   title="Standard"
-                  body={`Free above ₹999 · ${etaLabel}`}
+                  body={`Free above Ã¢â€šÂ¹999 Ã‚Â· ${etaLabel}`}
                   onClick={() => setDeliveryMode("STANDARD")}
                 />
                 <DeliveryOption
                   active={deliveryMode === "EXPRESS"}
                   title="Express"
-                  body="Priority dispatch · faster metro delivery"
+                  body="Priority dispatch Ã‚Â· faster metro delivery"
                   onClick={() => setDeliveryMode("EXPRESS")}
                 />
               </div>
@@ -1135,7 +1135,7 @@ export function CheckoutWizard({
               value={note}
               onChange={(e) => setNote(e.target.value)}
               rows={3}
-              placeholder="Delivery instructions, gift note, installation timing…"
+              placeholder="Delivery instructions, gift note, installation timingÃ¢â‚¬Â¦"
               maxLength={300}
             />
 
@@ -1180,12 +1180,12 @@ export function CheckoutWizard({
 
             <Collapsible
               title="Discounts"
-              value={`− ${inr(checkoutQuote.itemDiscount + (checkoutQuote.coupon?.discount ?? 0))}`}
+              value={`Ã¢Ë†â€™ ${inr(checkoutQuote.itemDiscount + (checkoutQuote.coupon?.discount ?? 0))}`}
               valueClass="text-emerald-600"
             >
-              <Row k="Item Discounts" v={`− ${inr(checkoutQuote.itemDiscount)}`} good />
+              <Row k="Item Discounts" v={`Ã¢Ë†â€™ ${inr(checkoutQuote.itemDiscount)}`} good />
               {checkoutQuote.coupon && (
-                <Row k={`Coupon ${checkoutQuote.coupon.code}`} v={`− ${inr(checkoutQuote.coupon.discount)}`} good />
+                <Row k={`Coupon ${checkoutQuote.coupon.code}`} v={`Ã¢Ë†â€™ ${inr(checkoutQuote.coupon.discount)}`} good />
               )}
             </Collapsible>
 
@@ -1230,7 +1230,7 @@ export function CheckoutWizard({
                   className="inline-flex items-center gap-2 rounded-lg bg-[#ff9f00] px-6 py-3 text-[14px] font-bold text-ink-900 transition-all hover:brightness-105 disabled:opacity-50"
                 >
                   {placing ? <Loader2 className="size-4 animate-spin" /> : <Zap className="size-4" />}
-                  Place order · {inr(checkoutQuote.total)}
+                  Place order Ã‚Â· {inr(checkoutQuote.total)}
                 </button>
               )}
             </div>
