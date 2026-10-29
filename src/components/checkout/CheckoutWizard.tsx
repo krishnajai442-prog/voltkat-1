@@ -45,7 +45,7 @@ type CheckoutLine = {
   stock: number;
   inStock: boolean;
   codEligible: boolean;
-  // Optional enrichment â€” rendered only when /api/cart/quote provides them.
+  // Optional enrichment — rendered only when /api/cart/quote provides them.
   color?: string | null;
   ratingAvg?: number | null;
   ratingCount?: number | null;
@@ -154,7 +154,7 @@ export function CheckoutWizard({
   );
 
   // Context `user` resolves AFTER first paint (session fetch), so addressMode can latch
-  // to "new" for logged-in users and the summary card then renders "â€”" placeholders.
+  // to "new" for logged-in users and the summary card then renders "—" placeholders.
   // Re-latch to the saved book once the session lands; a shopper who later toggles to
   // "new" keeps their choice because these deps never change again.
   useEffect(() => {
@@ -692,9 +692,9 @@ export function CheckoutWizard({
         lastSavedAddrSig.current = sig;
         toast.push({ title: "Address saved", body: "Added to your saved addresses." });
       }
-      // On failure we deliberately do NOT throw â€” the order still uses the snapshot.
+      // On failure we deliberately do NOT throw — the order still uses the snapshot.
     } catch {
-      /* network hiccup â€” non-blocking */
+      /* network hiccup — non-blocking */
     }
   }
 
@@ -747,7 +747,7 @@ export function CheckoutWizard({
   const etaLabel = `${new Date(checkoutQuote.etaFrom).toLocaleDateString("en-IN", {
     day: "numeric",
     month: "short",
-  })} â€“ ${new Date(checkoutQuote.etaTo).toLocaleDateString("en-IN", {
+  })} – ${new Date(checkoutQuote.etaTo).toLocaleDateString("en-IN", {
     day: "numeric",
     month: "short",
   })}`;
@@ -764,17 +764,17 @@ export function CheckoutWizard({
           tag: savedAddress.label,
           line: [savedAddress.line1, savedAddress.line2, savedAddress.city, savedAddress.state]
             .filter(Boolean)
-            .join(", ") + ` â€” ${savedAddress.pincode}`,
+            .join(", ") + ` — ${savedAddress.pincode}`,
           phone: savedAddress.phone,
         }
       : {
-          name: addressForm.fullName || "â€”",
+          name: addressForm.fullName || "—",
           tag: null as string | null,
           line:
             [addressForm.line1, addressForm.line2, addressForm.city, addressForm.state]
               .filter(Boolean)
-              .join(", ") + (addressForm.pincode ? ` â€” ${addressForm.pincode}` : ""),
-          phone: addressForm.phone || "â€”",
+              .join(", ") + (addressForm.pincode ? ` — ${addressForm.pincode}` : ""),
+          phone: addressForm.phone || "—",
         };
 
   const stepLabels = ["Address", "Order Summary", "Payment"];
@@ -816,7 +816,7 @@ export function CheckoutWizard({
 
             {user && addresses.length > 0 && addressMode === "new" && (
               <Button size="sm" variant="outline" onClick={() => setAddressMode("saved")}>
-                â† Use a saved address
+                ← Use a saved address
               </Button>
             )}
 
@@ -915,7 +915,7 @@ export function CheckoutWizard({
                   </div>
                 </div>
 
-                {/* Controlled PIN checker â€” value + status live in the parent */}
+                {/* Controlled PIN checker — value + status live in the parent */}
                 <PincodeChecker
                   value={addressForm.pincode}
                   onChange={(v) => setAddressForm((prev) => ({ ...prev, pincode: v }))}
@@ -1022,7 +1022,7 @@ export function CheckoutWizard({
                         </p>
                       )}
                       <p className="mt-1.5 flex flex-wrap items-baseline gap-1.5">
-                        {d > 0 && <span className="text-[13px] font-bold text-emerald-600">â†“{d}%</span>}
+                        {d > 0 && <span className="text-[13px] font-bold text-emerald-600">↓{d}%</span>}
                         {d > 0 && (
                           <span className="text-[12.5px] text-ink-300 line-through">{inr(line.mrp * line.quantity)}</span>
                         )}
@@ -1067,13 +1067,13 @@ export function CheckoutWizard({
                 <DeliveryOption
                   active={deliveryMode === "STANDARD"}
                   title="Standard"
-                  body={`Free above â‚¹999 Â· ${etaLabel}`}
+                  body={`Free above ₹999 · ${etaLabel}`}
                   onClick={() => setDeliveryMode("STANDARD")}
                 />
                 <DeliveryOption
                   active={deliveryMode === "EXPRESS"}
                   title="Express"
-                  body="Priority dispatch Â· faster metro delivery"
+                  body="Priority dispatch · faster metro delivery"
                   onClick={() => setDeliveryMode("EXPRESS")}
                 />
               </div>
@@ -1135,7 +1135,7 @@ export function CheckoutWizard({
               value={note}
               onChange={(e) => setNote(e.target.value)}
               rows={3}
-              placeholder="Delivery instructions, gift note, installation timingâ€¦"
+              placeholder="Delivery instructions, gift note, installation timing…"
               maxLength={300}
             />
 
@@ -1180,12 +1180,12 @@ export function CheckoutWizard({
 
             <Collapsible
               title="Discounts"
-              value={`âˆ’ ${inr(checkoutQuote.itemDiscount + (checkoutQuote.coupon?.discount ?? 0))}`}
+              value={`− ${inr(checkoutQuote.itemDiscount + (checkoutQuote.coupon?.discount ?? 0))}`}
               valueClass="text-emerald-600"
             >
-              <Row k="Item Discounts" v={`âˆ’ ${inr(checkoutQuote.itemDiscount)}`} good />
+              <Row k="Item Discounts" v={`− ${inr(checkoutQuote.itemDiscount)}`} good />
               {checkoutQuote.coupon && (
-                <Row k={`Coupon ${checkoutQuote.coupon.code}`} v={`âˆ’ ${inr(checkoutQuote.coupon.discount)}`} good />
+                <Row k={`Coupon ${checkoutQuote.coupon.code}`} v={`− ${inr(checkoutQuote.coupon.discount)}`} good />
               )}
             </Collapsible>
 
@@ -1230,7 +1230,7 @@ export function CheckoutWizard({
                   className="inline-flex items-center gap-2 rounded-lg bg-[#ff9f00] px-6 py-3 text-[14px] font-bold text-ink-900 transition-all hover:brightness-105 disabled:opacity-50"
                 >
                   {placing ? <Loader2 className="size-4 animate-spin" /> : <Zap className="size-4" />}
-                  Place order Â· {inr(checkoutQuote.total)}
+                  Place order · {inr(checkoutQuote.total)}
                 </button>
               )}
             </div>
