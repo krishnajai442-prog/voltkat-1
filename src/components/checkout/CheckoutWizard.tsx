@@ -509,7 +509,7 @@ export function CheckoutWizard({
 
     await clearLocalCart();
     toast.push({ title: "Order placed", body: "Cash on delivery confirmed." });
-    router.push(`/order/${json.order.orderNumber}/response`);
+    window.location.assign(`/order/${json.order.orderNumber}/response`);
   }
 
   async function startOnlinePayment() {
@@ -599,7 +599,7 @@ export function CheckoutWizard({
         if (verifyJson.orderNumber) {
           await clearLocalCart();
           toast.push({ title: "Payment successful", body: "Order confirmed." });
-          router.push(`/order/${verifyJson.orderNumber}/response`);
+          window.location.assign(`/order/${verifyJson.orderNumber}/response`);
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Payment verification failed.");
