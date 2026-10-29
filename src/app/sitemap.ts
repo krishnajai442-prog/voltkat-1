@@ -2,7 +2,17 @@ import type { MetadataRoute } from "next";
 import prisma from "@/lib/prisma";
 import { siteUrl } from "@/lib/utils";
 
-export const revalidate = 3600;
+// Generate on demand, never at build time. This is the entire point: a DB-backed
+// sitemap must not be prerendered during `next build`, because the build machine has
+// no DATABASE_URL (and Neon may be asleep) — which is exactly what killed the last
+// deploy ("Environment variable not found: DATABASE_URL" while generating static
+// pages). force-dynamic excludes this route from static generation, so the build is
+// immune; at runtime Vercel injects the env and the query runs against the live pooler.
+// We DROP `revalidate = 3600` on purpose: ISR would still seed this route at build
+// time — the very behavior being removed. A sitemap is crawled rarely, so per-request
+// generation is cheap; if you later want caching, add a short-TTL Upstash read here,
+// not ISR.
+export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const products = await prisma.product.findMany({
