@@ -41,7 +41,7 @@ export default async function OrderResponsePage({ params }: { params: Promise<{ 
     <main className="mx-auto w-full max-w-6xl px-3 py-5 sm:px-4">
       <div className="grid gap-5 lg:grid-cols-[1fr_340px]">
         {/* ── MAIN COLUMN ── */}
-        <div>
+        <div className="min-w-0">
           <div className="card flex items-start justify-between gap-4 p-5">
             <div className="min-w-0">
               <h1 className="font-display text-[20px] font-extrabold text-ink-900 sm:text-[24px]">Thanks for shopping with us!</h1>
@@ -112,7 +112,7 @@ export default async function OrderResponsePage({ params }: { params: Promise<{ 
         </div>
 
         {/* ── RIGHT SIDEBAR ── */}
-        <aside className="space-y-4">
+        <aside className="min-w-0 space-y-4">
           <div className="card p-4">
             <div className="flex items-center gap-2">
               <Headset className="size-5 text-[#2874f0]" />
