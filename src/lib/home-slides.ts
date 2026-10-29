@@ -1,312 +1,136 @@
-import type { Prisma } from "@prisma/client";
-import prisma from "./prisma";
-import { discountPercent } from "./utils";
+import prisma from "@/lib/prisma";
 
-export type SlideProductVM = {
+// ASCII-only source. \u escapes decode to real glyphs in the bundle but are plain
+// bytes in the file, so no console codepage / editor can ever re-corrupt them.
+// NEVER hardcode a literal · or ₹ in source again — that is the recurring mojibake.
+const DOT = "\u00B7";
+const RUPEE = "\u20B9";
+// Known-existing public asset (page.tsx already references it) so <Image src> never gets null/empty.
+const IMG_FALLBACK = "/placeholder-banner-bg.jpg";
+
+export type HeroSlideProduct = {
   slug: string;
   name: string;
-  image: string;
-  /** ONLY the admin-supplied per-slide artwork (HeroSlideProduct.image); null when the
-   *  "Slide image" input was left empty, so consumers can refuse to render a fallback. */
-  slideImage?: string | null;
-  mrp: number;
+  image: string; // non-empty: HeroSlider feeds it straight to <Image src>
   salePrice: number;
+  mrp: number;
   discountPercent: number;
 };
 
+// The exact contract HeroSlider.tsx imports. Field names/optionality mirror its reads.
 export type HeroSlideVM = {
   id: string;
+  gradient: string;
   badge: string;
   headline: string;
-  highlight?: string | null;
-  description?: string | null;
+  highlight: string | null;
+  description: string | null;
   ctaLabel: string;
-  ctaHref?: string | null;
-  secondaryLabel?: string | null;
-  secondaryHref?: string | null;
-  image?: string | null;
-  gradient: string;
-  products: SlideProductVM[];
+  ctaHref: string | null;
+  secondaryLabel: string | null;
+  secondaryHref: string | null;
+  products: HeroSlideProduct[];
 };
 
-const slideProductSelect = {
-  id: true,
-  slug: true,
-  name: true,
-  mrp: true,
-  salePrice: true,
-  discountPercent: true,
-  active: true,
-  images: {
-    select: {
-      url: true,
-      isPrimary: true,
-      position: true,
-    },
-    orderBy: { position: "asc" as const },
-  },
-} satisfies Prisma.ProductSelect;
-
-type SlideProductRow = Prisma.ProductGetPayload<{
-  select: typeof slideProductSelect;
-}>;
-
-function toSlideProduct(p: SlideProductRow): SlideProductVM {
-  const image =
-    p.images.find((i) => i.isPrimary)?.url ??
-    p.images[0]?.url ??
-    `https://picsum.photos/seed/${encodeURIComponent(p.slug)}/900/900`;
-
-  return {
-    slug: p.slug,
-    name: p.name,
-    image,
-    mrp: p.mrp,
-    salePrice: p.salePrice,
-    discountPercent: p.discountPercent || discountPercent(p.mrp, p.salePrice),
-  };
-}
-
-async function getSlideProducts(
-  where: Prisma.ProductWhereInput,
-  orderBy: Prisma.ProductOrderByWithRelationInput[],
-  take: number,
-): Promise<SlideProductVM[]> {
-  const rows = await prisma.product.findMany({
-    where: {
-      active: true,
-      stock: { gt: 0 },
-      ...where,
-    },
-    select: slideProductSelect,
-    orderBy,
-    take,
-  });
-
-  return rows.map(toSlideProduct);
-}
-
-export async function buildHeroSlides(limit = 18): Promise<HeroSlideVM[]> {
+export async function buildHeroSlides(take: number = 15): Promise<HeroSlideVM[]> {
   const now = new Date();
 
-    const [
-    custom,
-    newArrivals,
-    hotDeals,
-    bestSellers,
-    accessories,
-    laptops,
-    mobiles,
-    appliances,
-    premium,
-    budget,
-    topRated,
-    exchangeable,
-  ] = await Promise.all([
-    prisma.heroSlide.findMany({
-      where: {
-        active: true,
-        kind: "CUSTOM",
-        AND: [
-          {
-            OR: [{ startsAt: null }, { startsAt: { lte: now } }],
-          },
-          {
-            OR: [{ endsAt: null }, { endsAt: { gte: now } }],
-          },
-        ],
-      },
-      include: {
-        products: {
-          orderBy: { position: "asc" },
-          include: {
-            product: {
-              select: slideProductSelect,
+  // 1. ADMIN CAMPAIGNS FIRST — kind:"CUSTOM", active, inside the Starts/Ends window
+  //    (both nullable per schema), ordered by sortOrder, attached products flattened
+  //    into the HeroSlideProduct shape HeroSlider renders (main = [0], extras = [1..3)).
+  const custom = await prisma.heroSlide.findMany({
+    where: {
+      kind: "CUSTOM",
+      active: true,
+      AND: [
+        { OR: [{ startsAt: null }, { startsAt: { lte: now } }] },
+        { OR: [{ endsAt: null }, { endsAt: { gte: now } }] },
+      ],
+    },
+    orderBy: { sortOrder: "asc" },
+    include: {
+      products: {
+        orderBy: { position: "asc" },
+        include: {
+          product: {
+            select: {
+              id: true, name: true, slug: true,
+              salePrice: true, mrp: true, discountPercent: true,
+              images: { take: 1, orderBy: { position: "asc" }, select: { url: true } },
             },
           },
         },
       },
-      orderBy: { sortOrder: "asc" },
-      take: limit,
-    }),
-    getSlideProducts({}, [{ createdAt: "desc" }], 3),
-    getSlideProducts({ discountPercent: { gte: 25 } }, [{ discountPercent: "desc" }], 3),
-    getSlideProducts({}, [{ sold: "desc" }, { ratingAvg: "desc" }], 3),
-    getSlideProducts({ category: { slug: "accessories" } }, [{ sold: "desc" }], 3),
-    getSlideProducts({ category: { slug: "laptops" } }, [{ salePrice: "desc" }], 3),
-    getSlideProducts({ category: { slug: "mobiles" } }, [{ sold: "desc" }], 3),
-    getSlideProducts({ category: { slug: "home-appliances" } }, [{ sold: "desc" }], 3),
-    getSlideProducts({ salePrice: { gte: 50000 } }, [{ salePrice: "desc" }], 3),
-    getSlideProducts({ salePrice: { lte: 15000 } }, [{ sold: "desc" }], 3),
-    getSlideProducts({ ratingAvg: { gte: 4 } }, [{ ratingAvg: "desc" }], 3),
-    getSlideProducts({ exchangeEligible: true }, [{ sold: "desc" }], 3),
-  ]);
-  const customSlides: HeroSlideVM[] = custom.map((s) => ({
+    },
+  });
+
+  const customSlides: HeroSlideVM[] = custom.slice(0, take).map((s) => ({
     id: s.id,
+    gradient: String(s.gradient),
     badge: s.badge,
     headline: s.headline,
-    highlight: s.highlight,
-    description: s.description,
-    ctaLabel: s.ctaLabel,
-    ctaHref: s.ctaHref,
-    secondaryLabel: s.secondaryLabel,
-    secondaryHref: s.secondaryHref,
-    image: s.image,
-    gradient: s.gradient,
-    products: s.products
-      .filter((sp) => sp.product.active)
-         .map((sp) => {
-          const base = toSlideProduct(sp.product);
-          const override = sp.image?.trim() ? sp.image : null;
-          // `image` keeps the gallery fallback for general consumers; `slideImage`
-          // carries ONLY what the circled admin input supplied, so the hero can show
-          // nothing at all when that input is empty.
-          return { ...base, image: override ?? base.image, slideImage: override };
-        }),
+    highlight: s.highlight ?? null,
+    description: s.description ?? null,
+    ctaLabel: s.ctaLabel ?? "Shop Now",
+    ctaHref: s.ctaHref ?? null,
+    secondaryLabel: s.secondaryLabel ?? null,
+    secondaryHref: s.secondaryHref ?? null,
+    products: s.products.map((jp) => ({
+      slug: jp.product.slug,
+      name: jp.product.name,
+      image: (jp.image && jp.image.length ? jp.image : jp.product.images[0]?.url) || IMG_FALLBACK,
+      salePrice: jp.product.salePrice,
+      mrp: jp.product.mrp,
+      discountPercent: jp.product.discountPercent ?? 0,
+    })),
   }));
 
-  const autoSlides: HeroSlideVM[] = [
-    {
-      id: "auto-new-arrivals",
-      badge: "NEW ARRIVALS",
-      headline: "Fresh drops,",
-      highlight: "first-day pricing",
-      description:
-        "Latest smartphones, laptops and appliances added to VoltKart. Genuine stock, GST invoice and brand warranty.",
-      ctaLabel: "Explore new arrivals",
-      ctaHref: "/products/all?sort=newest",
-      secondaryLabel: "View offers",
-      secondaryHref: "/offers",
-      gradient: "EMERALD_TECH",
-      products: newArrivals,
-    },
-    {
-      id: "auto-hot-deals",
-      badge: "HOT DEALS",
-      headline: "Biggest cuts,",
-      highlight: "fastest moving",
-      description:
-        "Limited-time discounts across mobiles, laptops, appliances and accessories. Stock is live and updated in real time.",
-      ctaLabel: "Shop hot deals",
-      ctaHref: "/products/all?sort=discount",
-      secondaryLabel: "Coupons",
-      secondaryHref: "/offers",
-      gradient: "SUNSET_DEAL",
-      products: hotDeals,
-    },
-    {
-      id: "auto-best-sellers",
-      badge: "BEST SELLERS",
-      headline: "What India is",
-      highlight: "actually buying",
-      description:
-        "Proven picks based on orders, ratings and repeat demand. Honest pricing, no dark patterns.",
-      ctaLabel: "See best sellers",
-      ctaHref: "/products/all?sort=popular",
-      gradient: "VIOLET_STORM",
-      products: bestSellers,
-    },
-    {
-      id: "auto-accessories",
-      badge: "ADD-ONS",
-      headline: "Complete the setup",
-      highlight: "with smart add-ons",
-      description:
-        "Chargers, audio, power banks, hubs, bags and peripherals that pair well with your main purchase.",
-      ctaLabel: "Browse accessories",
-      ctaHref: "/products/accessories",
-      gradient: "ELECTRIC_AZURE",
-      products: accessories,
-    },
-        {
-      id: "auto-laptops",
-      badge: "LAPTOPS",
-      headline: "Work, create, game",
-      highlight: "without compromise",
-      description:
-        "Ultrabooks, business notebooks and gaming rigs with no-cost EMI and exchange support where eligible.",
-      ctaLabel: "Explore laptops",
-      ctaHref: "/products/laptops",
-      secondaryLabel: "EMI offers",
-      secondaryHref: "/offers",
-      gradient: "STEEL_GRAPHITE",
-      products: laptops,
-    },
-    {
-      id: "auto-mobiles",
-      badge: "MOBILES",
-      headline: "Smartphones for",
-      highlight: "every budget",
-      description:
-        "Latest 5G phones from top brands with launch pricing, exchange support and no-cost EMI.",
-      ctaLabel: "Explore mobiles",
-      ctaHref: "/products/mobiles",
-      gradient: "ELECTRIC_AZURE",
-      products: mobiles,
-    },
-    {
-      id: "auto-appliances",
-      badge: "HOME APPLIANCES",
-      headline: "Upgrade your home,",
-      highlight: "save big today",
-      description:
-        "ACs, refrigerators, washing machines and kitchen appliances at festival-style prices.",
-      ctaLabel: "Browse appliances",
-      ctaHref: "/products/home-appliances",
-      gradient: "EMERALD_TECH",
-      products: appliances,
-    },
-    {
-      id: "auto-premium",
-      badge: "PREMIUM PICKS",
-      headline: "Flagship grade,",
-      highlight: "worth every rupee",
-      description:
-        "Hand-picked flagships and premium laptops for buyers who want the best, no compromises.",
-      ctaLabel: "See premium picks",
-      ctaHref: "/products/all",
-      gradient: "MIDNIGHT",
-      products: premium,
-    },
-    {
-      id: "auto-budget",
-      badge: "VALUE PICKS",
-      headline: "Great value,",
-      highlight: "small prices",
-      description:
-        "Phones, audio and essentials under ₹15,000 that punch far above their price tag.",
-      ctaLabel: "Shop budget picks",
-      ctaHref: "/products/all",
-      gradient: "SUNSET_DEAL",
-      products: budget,
-    },
-    {
-      id: "auto-top-rated",
-      badge: "TOP RATED",
-      headline: "Loved by",
-      highlight: "thousands",
-      description:
-        "Products rated 4★ and above by verified buyers — the safest picks on VoltKart.",
-      ctaLabel: "See top rated",
-      ctaHref: "/products/all",
-      gradient: "VIOLET_STORM",
-      products: topRated,
-    },
-    {
-      id: "auto-exchange",
-      badge: "EXCHANGE OFFERS",
-      headline: "Trade in old,",
-      highlight: "bring home new",
-      description:
-        "Exchange-eligible products across mobiles, laptops and appliances with instant value.",
-      ctaLabel: "Browse exchange deals",
-      ctaHref: "/products/all",
-      secondaryLabel: "How exchange works",
-      secondaryHref: "/offers",
-      gradient: "STEEL_GRAPHITE",
-      products: exchangeable,
-    },
-  ];
+  // 2. AUTOMATIC CATALOG TOP-UP — fill the remainder from live in-stock products so the
+  //    carousel is never thin, a brand-new active product can appear immediately, and
+  //    when the admin has zero in-window campaigns this IS the whole carousel (fallback).
+  const remaining = take - customSlides.length;
+  if (remaining <= 0) return customSlides;
 
-  return [...customSlides, ...autoSlides].slice(0, limit);
+  const pool = await prisma.product.findMany({
+    where: { active: true, stock: { gt: 0 } },
+    select: {
+      id: true, name: true, slug: true,
+      salePrice: true, mrp: true, discountPercent: true,
+      images: { take: 1, orderBy: { position: "asc" }, select: { url: true } },
+      brand: { select: { name: true } },
+      category: { select: { name: true } },
+    },
+    take: Math.max(remaining * 4, 24), // oversample so the shuffle has variety
+  });
+
+  const autoSlides: HeroSlideVM[] = pool
+    .sort(() => Math.random() - 0.5)
+    .slice(0, remaining)
+    .map((p) => {
+      const disc = p.discountPercent ?? (p.mrp > p.salePrice ? Math.round(((p.mrp - p.salePrice) / p.mrp) * 100) : 0);
+      const sub = `${p.brand?.name ?? ""} ${p.category?.name ? DOT + " " + p.category.name : ""}`.trim();
+      return {
+        id: p.id,
+        gradient: "MIDNIGHT",
+        badge: disc > 0 ? `${disc}% OFF` : "Bestseller",
+        headline: p.name,
+        highlight: null,
+        description: disc > 0 ? `${disc}% off ${DOT} Save ${RUPEE}${p.mrp - p.salePrice}` : sub || "Top rated in stock",
+        ctaLabel: "Shop Now",
+        ctaHref: `/product/${p.slug}`,
+        secondaryLabel: null,
+        secondaryHref: null,
+        // the featured product IS the hero image (main = [0], no extras)
+        products: [{
+          slug: p.slug,
+          name: p.name,
+          image: p.images[0]?.url || IMG_FALLBACK,
+          salePrice: p.salePrice,
+          mrp: p.mrp,
+          discountPercent: disc,
+        }],
+      };
+    });
+
+  return [...customSlides, ...autoSlides];
 }

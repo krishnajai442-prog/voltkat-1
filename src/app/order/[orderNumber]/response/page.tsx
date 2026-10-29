@@ -28,7 +28,20 @@ export default async function OrderResponsePage({ params }: { params: Promise<{ 
 
   const [items, cats] = await Promise.all([
     prisma.orderItem.findMany({ where: { orderId: order.id }, orderBy: { id: "asc" } }),
-    prisma.category.findMany({ where: { active: true }, select: { slug: true, name: true }, take: 8, orderBy: { name: "asc" } }),
+        prisma.category.findMany({
+      where: { active: true },
+      select: {
+        slug: true,
+        name: true,
+        products: {
+          where: { active: true },
+          take: 1,
+          select: { images: { take: 1, orderBy: { position: "asc" }, select: { url: true } } },
+        },
+      },
+      take: 8,
+      orderBy: { name: "asc" },
+    }),
   ]);
 
   const eta = etaLabel(order.etaFrom, order.etaTo);
@@ -91,12 +104,21 @@ export default async function OrderResponsePage({ params }: { params: Promise<{ 
             <section className="mt-6">
               <h2 className="mb-3 font-display text-[15px] font-bold text-ink-900">You might be also interested in</h2>
               <div className="flex gap-3 overflow-x-auto pb-2">
-                {cats.map((c) => (
-                  <a key={c.slug} href={`/products/${c.slug}`} className="card flex w-[120px] shrink-0 flex-col items-center gap-2 p-3 text-center no-underline transition-shadow hover:shadow-md">
-                    <span className="grid size-14 place-items-center rounded-full bg-gradient-to-br from-[#2874f0]/15 to-emerald-500/15 text-[12px] font-black text-[#2874f0]">{c.name.slice(0, 2).toUpperCase()}</span>
-                    <span className="line-clamp-2 text-[12px] font-semibold text-ink-700">{c.name}</span>
-                  </a>
-                ))}
+                                {cats.map((c) => {
+                  const img = c.products[0]?.images[0]?.url ?? null;
+                  return (
+                    <a key={c.slug} href={`/products/${c.slug}`} className="card flex w-[120px] shrink-0 flex-col items-center gap-2 p-3 text-center no-underline transition-shadow hover:shadow-md">
+                      <span className="relative grid size-16 place-items-center overflow-hidden rounded-full bg-canvas">
+                        {img ? (
+                          <GuardedImg src={img} name={c.name} className="size-full object-contain p-1" />
+                        ) : (
+                          <span className="text-[12px] font-black text-[#2874f0]">{c.name.slice(0, 2).toUpperCase()}</span>
+                        )}
+                      </span>
+                      <span className="line-clamp-2 text-[12px] font-semibold text-ink-700">{c.name}</span>
+                    </a>
+                  );
+                })}
               </div>
             </section>
           )}
