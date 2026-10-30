@@ -22,13 +22,17 @@ type Props = {
   returnableDays?: number | null;
   images: Img[];
   specifications?: SpecRow[] | null;
+  // Long-form copy from Product.description (admin-edited on the specs page).
+  // Optional so existing call sites that don't pass it still compile.
+  description?: string | null;
 };
 
-type TabKey = "showcase" | "specs" | "warranty" | "mfg";
+type TabKey = "showcase" | "specs" | "description" | "warranty" | "mfg";
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "showcase", label: "Showcase" },
   { key: "specs", label: "Specifications" },
+  { key: "description", label: "Description" },
   { key: "warranty", label: "Warranty" },
   { key: "mfg", label: "Manufacturer Info" },
 ];
@@ -54,6 +58,7 @@ export function ProductDetails(props: Props) {
   const {
     name, brandName, categoryName, subtype, color, ram, storage,
     screenSize, processor, warrantyMonths, returnableDays, images, specifications,
+    description,
   } = props;
 
   const allSpecs = specifications ?? [];
@@ -62,6 +67,7 @@ export function ProductDetails(props: Props) {
   const mfgDb      = allSpecs.filter((s) => s.kind === "MFG");
   const banners    = (images ?? []).filter((im) => (im.kind ?? "GALLERY") === "SHOWCASE");
   const teaser     = banners.slice(0, COLLAPSED);
+  const descText   = (description ?? "").trim();
 
   // Fallbacks = the old hardcoded text, used only until admin adds rows.
   const warrantyRows: [string, string][] = warrantyDb.length
@@ -81,7 +87,7 @@ export function ProductDetails(props: Props) {
         ["Marketed & Sold by", "VoltKart"],
         ["Country of Origin", "India"],
         ["Packed Quantity", "1"],
-        ["Category", categoryName ?? "—"],
+        ["Category", categoryName ?? "\u2014"],
         ["Model", subtype ?? name],
       ];
 
@@ -123,7 +129,7 @@ export function ProductDetails(props: Props) {
                 <>
                   {/* -mx-4 bleeds edge-to-edge (matches the video width); the clamp crops the
                       first banner to a teaser. shrink-0 on the img stops the flex column from
-                      squashing it — without it max-h would compress, not crop. */}
+                      squashing it - without it max-h would compress, not crop. */}
                   <div className={`-mx-4 flex flex-col overflow-hidden ${TEASER_MAX_H}`}>
                     {teaser.map((im, i) => (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -157,6 +163,19 @@ export function ProductDetails(props: Props) {
                 <SpecsTable specifications={specRows} />
               ) : (
                 <p className="py-3 text-[13px] text-gray-500">No detailed specifications listed.</p>
+              )}
+            </div>
+          )}
+
+          {/* Description = long-form admin copy, line breaks preserved, plain text (no HTML). */}
+          {tab === "description" && (
+            <div className="pt-1">
+              {descText ? (
+                <div className="whitespace-pre-wrap text-[13px] leading-relaxed text-gray-700">
+                  {description}
+                </div>
+              ) : (
+                <p className="py-3 text-[13px] text-gray-500">No description provided.</p>
               )}
             </div>
           )}

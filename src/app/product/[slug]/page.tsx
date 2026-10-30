@@ -493,6 +493,7 @@ export default async function ProductPage({
             returnableDays={product.returnableDays}
             images={product.images}
             specifications={product.specifications}
+            description={product.description}
           />
 
           <ProductBuyBar
