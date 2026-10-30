@@ -38,6 +38,8 @@ type Slide = {
 // Flipkart-style strip: several rounded banner cards visible at once, sliding one
 // card per step with neighbours peeking. Card width + gap live in CSS vars so the
 // inline translate calc follows the responsive layout without JS measurement.
+// Heights nudged +~3% (180->186 / 220->227 / 280->288) to ease vertical crop on
+// portrait products; shared by BOTH branches so the strip row stays aligned.
 const CARD_VARS =
   "[--gap:8px] [--card-w:100%] sm:[--gap:16px] sm:[--card-w:60%] lg:[--card-w:47.5%]";
 
@@ -82,11 +84,13 @@ export function HeroCarousel({ slides }: { slides: Slide[] }) {
         >
           {slides.map((slide, idx) => {
             // art=true  -> admin designed full-bleed creative: object-cover edge-to-edge
-            //            on a dark stage, UNCHANGED (the Picture-21/27/28 Samsung/bolt look).
+            //            on a dark stage, UNCHANGED (the Samsung/bolt look).
             // art=false -> product-led slide: the photo is fitted FULL-BLEED (cover) so its
-            //            own background IS the slide background -> no white/dark/colored
-            //            rectangle for ANY image type (the 4/5 effect). A left->right scrim
-            //            keeps the overlaid copy legible over white, black or busy art.
+            //            own background IS the slide background -> no rectangle for ANY
+            //            image type. Legibility now comes from a LOCALIZED translucent pad
+            //            behind only the left copy (NOT a full-height gradient), so light
+            //            white-canvas photos (MacBook/Pixel) no longer get bisected into a
+            //            black-left / white-right slide; the product side stays pristine.
             const isArt = !!slide.art;
             const prod = slide.products?.[0];
             const img = isArt ? slide.imageUrl : (prod?.image || slide.imageUrl);
@@ -103,7 +107,7 @@ export function HeroCarousel({ slides }: { slides: Slide[] }) {
                 key={idx}
                 href={slide.ctaHref || "/products/all"}
                 style={{ width: "var(--card-w)" }}
-                className={`group relative block h-[180px] shrink-0 overflow-hidden rounded-xl shadow-sm ring-1 sm:h-[220px] lg:h-[280px] ${
+                className={`group relative block h-[186px] shrink-0 overflow-hidden rounded-xl shadow-sm ring-1 sm:h-[227px] lg:h-[288px] ${
                   isArt ? "bg-gray-900 ring-black/5" : "bg-white ring-gray-200/70"
                 }`}
               >
@@ -126,9 +130,9 @@ export function HeroCarousel({ slides }: { slides: Slide[] }) {
                 ) : (
                   <>
                     {/* IMAGE AS THE SLIDE: full-bleed cover so the photo's own canvas
-                        (white / dark / colored) becomes the background -> zero rectangle,
-                        exactly like the 4/5 composites. object-center keeps a centered
-                        subject in frame; the cropped area is the photo's empty margin. */}
+                        (white / dark / colored) becomes the background -> zero rectangle.
+                        NO full-height scrim here anymore (that was what bisected light
+                        photos); the only overlay is the localized text pad below. */}
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={img}
@@ -136,18 +140,13 @@ export function HeroCarousel({ slides }: { slides: Slide[] }) {
                       loading={idx === 0 ? "eager" : "lazy"}
                       className="absolute inset-0 z-0 size-full object-cover object-center transition-transform duration-500 group-hover:scale-[1.03]"
                     />
-                    {/* Legibility scrim: dark on the left (where copy sits), fading to
-                        clear on the right so the product shows on its native canvas.
-                        Required because the underlying image brightness is unknown. */}
-                    <span
-                      aria-hidden
-                      className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-r from-black/75 via-black/40 to-transparent"
-                    />
-                    {/* OVERLAID COPY: same elements/positions as before, recolored to light
-                        so they read on the scrim over any image. Constrained to the left
-                        ~58% so it never sits on top of the product subject. */}
+                    {/* LOCALIZED LEGIBILITY PAD: a small rounded translucent panel behind
+                        ONLY the left copy. Works on white, black or busy images alike
+                        (white text on >=55% black is always readable), and leaves the
+                        product side + the image's top/bottom-left corners completely
+                        clean, so the photo's background still reads as the slide. */}
                     <span className="absolute inset-0 z-20 flex items-center px-3 sm:px-5 lg:px-7">
-                      <span className="flex w-[58%] min-w-0 flex-col justify-center sm:w-[52%]">
+                      <span className="flex w-[58%] min-w-0 flex-col justify-center rounded-2xl bg-black/55 px-3 py-2.5 backdrop-blur-sm sm:w-[52%] sm:px-4 sm:py-3">
                         {disc > 0 && (
                           <span className="mb-1.5 inline-flex w-fit items-center rounded-full bg-yellow-400 px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wide text-[#0a1024] shadow-sm sm:text-[10px]">
                             {disc}% OFF
