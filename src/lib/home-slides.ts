@@ -1,13 +1,11 @@
 import prisma from "@/lib/prisma";
 
-// ASCII-only source. These \u escapes decode to real glyphs in the bundle but are
-// plain bytes in the file, so no console codepage / editor can ever re-corrupt them.
-// NEVER hardcode a literal middle-dot or rupee sign in source again - that is the
-// recurring mojibake (it just re-infected this file and DynamicAdSlot.tsx).
+// ASCII-only source. \u escapes decode to real glyphs at runtime but are plain bytes
+// in the file, so the CP1252 mojibake that keeps re-infecting pasted files can never
+// return. NEVER hardcode a literal middle-dot or rupee sign in source again.
 const DOT = "\u00B7";
 const RUPEE = "\u20B9";
-// Known-existing public asset (page.tsx already references it) so an <img>/<Image>
-// src is never empty.
+// Known-existing public asset so an <img>/<Image> src is never empty.
 const IMG_FALLBACK = "/placeholder-banner-bg.jpg";
 
 export type HeroSlideProduct = {
@@ -17,6 +15,11 @@ export type HeroSlideProduct = {
   salePrice: number;
   mrp: number;
   discountPercent: number;
+  // real Product columns so the hero can compose the reference's spec line + brand eyebrow
+  brand?: string | null;
+  color?: string | null;
+  storage?: string | null;
+  ram?: string | null;
 };
 
 // The exact contract HeroSlider.tsx imports. `image` is OPTIONAL and only set for a
@@ -62,6 +65,8 @@ export async function buildHeroSlides(take: number = 15): Promise<HeroSlideVM[]>
             select: {
               id: true, name: true, slug: true,
               salePrice: true, mrp: true, discountPercent: true,
+              color: true, storage: true, ram: true,
+              brand: { select: { name: true } },
               images: { take: 1, orderBy: { position: "asc" }, select: { url: true } },
             },
           },
@@ -82,7 +87,7 @@ export async function buildHeroSlides(take: number = 15): Promise<HeroSlideVM[]>
     secondaryLabel: s.secondaryLabel ?? null,
     secondaryHref: s.secondaryHref ?? null,
     // top-level image = the admin's full-bleed artwork ONLY. Null when the admin left it
-    // empty, which makes this slide product-led (contained) instead of a cropped banner.
+    // empty, which makes this slide product-led (cinematic) instead of a cropped banner.
     image: s.image ?? null,
     products: s.products.map((jp) => ({
       slug: jp.product.slug,
@@ -91,13 +96,17 @@ export async function buildHeroSlides(take: number = 15): Promise<HeroSlideVM[]>
       salePrice: jp.product.salePrice,
       mrp: jp.product.mrp,
       discountPercent: jp.product.discountPercent ?? 0,
+      brand: jp.product.brand?.name ?? null,
+      color: jp.product.color ?? null,
+      storage: jp.product.storage ?? null,
+      ram: jp.product.ram ?? null,
     })),
   }));
 
   // 2. AUTOMATIC CATALOG TOP-UP - fill the remainder from live in-stock products so the
   //    carousel is never thin, a brand-new active product can appear immediately, and when
   //    the admin has zero in-window campaigns this IS the whole carousel (your fallback).
-  //    image:null here is deliberate: it routes these to HeroCarousel's contained branch.
+  //    image:null here is deliberate: it routes these to HeroCarousel's cinematic branch.
   const remaining = take - customSlides.length;
   if (remaining <= 0) return customSlides;
 
@@ -106,6 +115,7 @@ export async function buildHeroSlides(take: number = 15): Promise<HeroSlideVM[]>
     select: {
       id: true, name: true, slug: true,
       salePrice: true, mrp: true, discountPercent: true,
+      color: true, storage: true, ram: true,
       images: { take: 1, orderBy: { position: "asc" }, select: { url: true } },
       brand: { select: { name: true } },
       category: { select: { name: true } },
@@ -130,7 +140,7 @@ export async function buildHeroSlides(take: number = 15): Promise<HeroSlideVM[]>
         ctaHref: `/product/${p.slug}`,
         secondaryLabel: null,
         secondaryHref: null,
-        image: null, // product-led -> HeroCarousel shows it contained, whole, like a card
+        image: null, // product-led -> HeroCarousel renders it as a cinematic composed slide
         products: [{
           slug: p.slug,
           name: p.name,
@@ -138,6 +148,10 @@ export async function buildHeroSlides(take: number = 15): Promise<HeroSlideVM[]>
           salePrice: p.salePrice,
           mrp: p.mrp,
           discountPercent: disc,
+          brand: p.brand?.name ?? null,
+          color: p.color ?? null,
+          storage: p.storage ?? null,
+          ram: p.ram ?? null,
         }],
       };
     });
