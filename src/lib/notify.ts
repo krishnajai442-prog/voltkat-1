@@ -90,6 +90,57 @@ export async function sendEmail(to: string, subject: string, body: string): Prom
   }
 }
 
+/* ----------------------------- SMS (MSG91) ----------------------------- */
+
+/**
+ * Transactional/OTP SMS via MSG91, mirroring sendEmail's never-throws contract.
+ * Dry-run (logs a MASKED body, never the raw code) when MSG91 keys are absent, so
+ * an unprovisioned env degrades to local logging instead of throwing into a route.
+ *
+ * VERIFY BEFORE RELYING ON LIVE SENDS: MSG91 exposes several send endpoints
+ * (v5/flow template send, v2/sendsms plain, OTP short-link). The env names
+ * (TEMPLATE_ID + SENDER_ID + AUTH_KEY) point at the template/flow send encoded
+ * below. Confirm in your MSG91 dashboard that this template is an OTP or
+ * Transactional type and that the variable key matches (commonly {{OTP}} or
+ * ##OTP##); if your template differs, swap endpoint/body to match. A wrong shape
+ * 400s but fails safe here (returns false, never throws), so signup degrades to
+ * the route's dev-code path rather than breaking. India transactional SMS also
+ * requires a DLT/TFP-registered header + approved template - that is provisioning,
+ * not code, and no body shape fixes an unapproved template at the carrier.
+ */
+export async function sendSms(to: string, body: string): Promise<boolean> {
+  const authKey = process.env.MSG91_AUTH_KEY;
+  const templateId = process.env.MSG91_TEMPLATE_ID;
+  const senderId = process.env.MSG91_SENDER_ID;
+  if (!authKey || !templateId || !senderId) {
+    // Mask any 6-digit run so an unconfigured env never prints a live OTP to console.
+    const masked = body.replace(/\b\d{6}\b/g, "______");
+    console.log(`[notify:sms:DRY-RUN] to=${to}\n  ${masked}`);
+    return false;
+  }
+  // MSG91 India typically expects 91XXXXXXXXXX; normalize defensively.
+  const d = to.replace(/\D/g, "");
+  const mobile = d.length === 10 ? `91${d}` : d.length === 12 && d.startsWith("91") ? d : d;
+  try {
+    const res = await fetch("https://api.msg91.com/api/v5/flow/", {
+      method: "POST",
+      headers: { authorization: authKey, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sender: senderId,
+        template_id: templateId,
+        template_type: "otp",
+        auth_key: authKey,
+        flows: [{ mobile, message: body }],
+      }),
+    });
+    if (!res.ok) console.error("[notify:sms] HTTP", res.status, await res.text());
+    return res.ok;
+  } catch (e) {
+    console.error("[notify:sms] failed", e);
+    return false;
+  }
+}
+
 /* --------------------------- public entry --------------------------- */
 
 /**
