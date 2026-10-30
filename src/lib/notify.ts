@@ -71,7 +71,7 @@ async function sendWhatsApp(to: string, body: string): Promise<boolean> {
 
 export async function sendEmail(to: string, subject: string, body: string): Promise<boolean> {
   const key = process.env.RESEND_API_KEY;
-  const from = process.env.MAIL_FROM ?? "VoltKart <onboarding@resend.dev>";
+  const from = process.env.MAIL_FROM ?? process.env.EMAIL_FROM ?? "VoltKart <onboarding@resend.dev>";
   if (!key) {
     console.log(`[notify:email:DRY-RUN] to=${to} subject="${subject}"\n  ${body}`);
     return false;
