@@ -47,7 +47,17 @@ export async function GET() {
       return NextResponse.json({ ok: false, error: "Ad mapping failed" }, { status: 500 });
     }
 
-    return NextResponse.json({ ok: true, product: vm });
+    // Brand for the featured card bottom-right stamp. Fetched with one extra
+    // indexed lookup instead of widening the shared productSelect/CardVM in
+    // lib/catalog.ts (consumed by the rails, hero and feed too) - keeps this a
+    // route-local change and lights the stamp without a shared-contract edit.
+    const brandRow = await prisma.product.findUnique({
+      where: { id: picked.id },
+      select: { brand: { select: { name: true } } },
+    });
+    const brandName = brandRow?.brand?.name ?? null;
+
+    return NextResponse.json({ ok: true, product: { ...vm, brand: brandName } });
   } catch {
     return NextResponse.json({ ok: false, error: "Random ad generation failed" }, { status: 500 });
   }
