@@ -1,23 +1,28 @@
 import prisma from "@/lib/prisma";
 
-// ASCII-only source. \u escapes decode to real glyphs in the bundle but are plain
-// bytes in the file, so no console codepage / editor can ever re-corrupt them.
-// NEVER hardcode a literal · or ₹ in source again — that is the recurring mojibake.
+// ASCII-only source. These \u escapes decode to real glyphs in the bundle but are
+// plain bytes in the file, so no console codepage / editor can ever re-corrupt them.
+// NEVER hardcode a literal middle-dot or rupee sign in source again - that is the
+// recurring mojibake (it just re-infected this file and DynamicAdSlot.tsx).
 const DOT = "\u00B7";
 const RUPEE = "\u20B9";
-// Known-existing public asset (page.tsx already references it) so <Image src> never gets null/empty.
+// Known-existing public asset (page.tsx already references it) so an <img>/<Image>
+// src is never empty.
 const IMG_FALLBACK = "/placeholder-banner-bg.jpg";
 
 export type HeroSlideProduct = {
   slug: string;
   name: string;
-  image: string; // non-empty: HeroSlider feeds it straight to <Image src>
+  image: string; // non-empty: consumers feed it straight to an <img>/<Image> src
   salePrice: number;
   mrp: number;
   discountPercent: number;
 };
 
-// The exact contract HeroSlider.tsx imports. Field names/optionality mirror its reads.
+// The exact contract HeroSlider.tsx imports. `image` is OPTIONAL and only set for a
+// designed full-bleed banner; product-led slides leave it null so page.tsx's existing
+// `art: Boolean(s.image)` correctly distinguishes "creative" from "product" WITHOUT
+// editing page.tsx. HeroSlider never reads `image`, so adding it is backward-safe.
 export type HeroSlideVM = {
   id: string;
   gradient: string;
@@ -29,15 +34,16 @@ export type HeroSlideVM = {
   ctaHref: string | null;
   secondaryLabel: string | null;
   secondaryHref: string | null;
+  image?: string | null;
   products: HeroSlideProduct[];
 };
 
 export async function buildHeroSlides(take: number = 15): Promise<HeroSlideVM[]> {
   const now = new Date();
 
-  // 1. ADMIN CAMPAIGNS FIRST — kind:"CUSTOM", active, inside the Starts/Ends window
-  //    (both nullable per schema), ordered by sortOrder, attached products flattened
-  //    into the HeroSlideProduct shape HeroSlider renders (main = [0], extras = [1..3)).
+  // 1. ADMIN CAMPAIGNS FIRST - the real table is heroSlide (NOT banner), kind:"CUSTOM",
+  //    active, inside the nullable startsAt/endsAt window, ordered by sortOrder, with the
+  //    HeroSlideProduct join flattened into the chips HeroSlider/HeroCarousel render.
   const custom = await prisma.heroSlide.findMany({
     where: {
       kind: "CUSTOM",
@@ -75,6 +81,9 @@ export async function buildHeroSlides(take: number = 15): Promise<HeroSlideVM[]>
     ctaHref: s.ctaHref ?? null,
     secondaryLabel: s.secondaryLabel ?? null,
     secondaryHref: s.secondaryHref ?? null,
+    // top-level image = the admin's full-bleed artwork ONLY. Null when the admin left it
+    // empty, which makes this slide product-led (contained) instead of a cropped banner.
+    image: s.image ?? null,
     products: s.products.map((jp) => ({
       slug: jp.product.slug,
       name: jp.product.name,
@@ -85,9 +94,10 @@ export async function buildHeroSlides(take: number = 15): Promise<HeroSlideVM[]>
     })),
   }));
 
-  // 2. AUTOMATIC CATALOG TOP-UP — fill the remainder from live in-stock products so the
-  //    carousel is never thin, a brand-new active product can appear immediately, and
-  //    when the admin has zero in-window campaigns this IS the whole carousel (fallback).
+  // 2. AUTOMATIC CATALOG TOP-UP - fill the remainder from live in-stock products so the
+  //    carousel is never thin, a brand-new active product can appear immediately, and when
+  //    the admin has zero in-window campaigns this IS the whole carousel (your fallback).
+  //    image:null here is deliberate: it routes these to HeroCarousel's contained branch.
   const remaining = take - customSlides.length;
   if (remaining <= 0) return customSlides;
 
@@ -120,7 +130,7 @@ export async function buildHeroSlides(take: number = 15): Promise<HeroSlideVM[]>
         ctaHref: `/product/${p.slug}`,
         secondaryLabel: null,
         secondaryHref: null,
-        // the featured product IS the hero image (main = [0], no extras)
+        image: null, // product-led -> HeroCarousel shows it contained, whole, like a card
         products: [{
           slug: p.slug,
           name: p.name,

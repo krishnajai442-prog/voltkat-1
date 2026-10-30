@@ -72,20 +72,23 @@ export function HeroCarousel({ slides }: { slides: Slide[] }) {
           }}
         >
           {slides.map((slide, idx) => {
-            // The admin's per-product "Slide image" (if any) is the card's
-            // full-bleed background — Flipkart-style, edge-to-edge, never a
-            // contained thumbnail in a white box. Placeholder photo only when
-            // that input is empty; never the product's primary gallery image.
-            const feat = slide.products?.find((p) => p.slideImage);
+            // art=true  -> admin designed full-bleed creative (cover, edge-to-edge).
+            // art=false -> product-led slide: show the WHOLE product contained on a
+            //            light stage, exactly like a product card, never cropped.
+            const isArt = !!slide.art;
+            const prod = slide.products?.[0];
+            const img = isArt ? slide.imageUrl : (prod?.image || slide.imageUrl);
 
             return (
               <Link
                 key={idx}
                 href={slide.ctaHref || "/products/all"}
                 style={{ width: "var(--card-w)" }}
-                className="group relative block h-[180px] shrink-0 overflow-hidden rounded-xl bg-gray-900 shadow-sm ring-1 ring-black/5 sm:h-[220px] lg:h-[280px]"
+                className={`group relative block h-[180px] shrink-0 overflow-hidden rounded-xl shadow-sm ring-1 sm:h-[220px] lg:h-[280px] ${
+                  isArt ? "bg-gray-900 ring-black/5" : "bg-gradient-to-r from-sky-50 via-white to-indigo-50/60 ring-gray-200/70"
+                }`}
               >
-                {slide.art ? (
+                {isArt ? (
                   <>
                     {/* Pure artwork card (Flipkart-style banner): the uploaded image IS
                         the creative. Plain <img>: admin-pasted hosts are open-ended and an
@@ -103,44 +106,43 @@ export function HeroCarousel({ slides }: { slides: Slide[] }) {
                   </>
                 ) : (
                   <>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={feat?.slideImage || slide.imageUrl}
-                      alt={feat?.name || slide.headline}
-                      loading={idx === 0 ? "eager" : "lazy"}
-                      className="absolute inset-0 size-full object-cover object-center opacity-90 transition-opacity group-hover:opacity-80"
-                    />
-
-                    {/* Gradient overlay for text readability */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
-
-                    {/* Content overlay */}
-                    <div className="relative z-10 flex h-full flex-col justify-center px-4 text-white sm:px-6 lg:px-8">
-                      {slide.badge && (
-                        <span className="mb-1.5 inline-flex w-fit items-center gap-1 rounded-full bg-yellow-400 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-black shadow-sm animate-pulse">
-                          ⚡ {slide.badge}
-                        </span>
-                      )}
-                      <h1 className="max-w-2xl font-display text-lg font-extrabold leading-tight drop-shadow-lg sm:text-2xl lg:text-3xl">
-                        {slide.headline}
-                        {slide.highlight && (
-                          <>
-                            <br />
-                            <span className="text-yellow-300">{slide.highlight}</span>
-                          </>
+                    {/* soft glow behind the product, like the reference creative */}
+                    <span aria-hidden className="pointer-events-none absolute right-[-10%] top-1/2 size-40 -translate-y-1/2 rounded-full bg-sky-200/50 blur-2xl sm:size-56" />
+                    <span className="relative z-10 flex h-full items-center gap-3 px-4 sm:gap-4 sm:px-6 lg:px-8">
+                      <span className="min-w-0 flex-1">
+                        {slide.badge && (
+                          <span className="mb-1.5 inline-flex w-fit items-center gap-1 rounded-full bg-[#2874f0] px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white shadow">
+                            {slide.badge}
+                          </span>
                         )}
-                      </h1>
-                      {slide.description && (
-                        <p className="mt-1.5 line-clamp-2 max-w-lg text-[11px] text-gray-200 sm:text-sm">
-                          {slide.description}
-                        </p>
-                      )}
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <span className="rounded-sm bg-white px-4 py-1.5 text-xs font-bold text-[#2874f0] shadow-lg transition-transform group-hover:scale-105">
+                        <h2 className="max-w-md font-display text-base font-extrabold leading-tight text-gray-900 sm:text-xl lg:text-2xl">
+                          {slide.headline}
+                          {slide.highlight && (
+                            <>
+                              <br />
+                              <span className="text-[#2874f0]">{slide.highlight}</span>
+                            </>
+                          )}
+                        </h2>
+                        {slide.description && (
+                          <p className="mt-1 line-clamp-2 max-w-xs text-[11px] text-gray-500 sm:text-[12.5px]">
+                            {slide.description}
+                          </p>
+                        )}
+                        <span className="mt-2.5 inline-flex items-center rounded-sm bg-[#2874f0] px-3.5 py-1.5 text-[11px] font-bold text-white shadow transition-transform group-hover:scale-105 sm:text-xs">
                           {slide.ctaLabel || "Shop Now"}
                         </span>
-                      </div>
-                    </div>
+                      </span>
+                      <span className="relative h-full w-[40%] shrink-0">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={img}
+                          alt={prod?.name || slide.headline}
+                          loading={idx === 0 ? "eager" : "lazy"}
+                          className="absolute inset-0 size-full object-contain object-center drop-shadow-xl transition-transform duration-500 group-hover:scale-[1.03]"
+                        />
+                      </span>
+                    </span>
                   </>
                 )}
               </Link>

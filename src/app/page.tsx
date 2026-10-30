@@ -14,7 +14,6 @@ import { CategoryDealRow } from "@/components/home/CategoryDealRow";
 import { BrandSpotlight } from "@/components/home/BrandSpotlight";
 import { ProductGrid } from "@/components/home/ProductGrid";
 import { ServiceIconRow } from "@/components/home/ServiceIconRow";
-import { SponsoredStrip } from "@/components/home/SponsoredStrip";
 
 export const revalidate = 5;
 
@@ -112,7 +111,6 @@ export default async function HomePage() {
         <HeroCarousel slides={slides} />
       </section>
 
-      <section><SponsoredStrip /></section>
 
       {/* B. CATEGORY-DEAL TILES (horizontal "jump in" strip) */}
       <section className="container-x mb-6">
