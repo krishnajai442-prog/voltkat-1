@@ -15,7 +15,7 @@ type SlideProduct = {
   salePrice: number;
   /** ONLY the admin-supplied per-slide artwork; null when that input was empty. */
   slideImage?: string | null;
-  // real Product fields so the cinematic product slide can compose brand + spec line
+  // real Product fields so the product slide can compose brand + spec line
   discountPercent?: number;
   brand?: string | null;
   color?: string | null;
@@ -82,11 +82,11 @@ export function HeroCarousel({ slides }: { slides: Slide[] }) {
           }}
         >
           {slides.map((slide, idx) => {
-            // art=true  -> admin designed full-bleed creative (the Picture-22 look):
-            //            object-cover edge-to-edge, unchanged.
-            // art=false -> product-led slide: compose the SAME cinematic treatment in
-            //            React from real product fields, in VoltKart's palette, with the
-            //            product CONTAINED (never cropped) and glowing on the right.
+            // art=true  -> admin designed full-bleed creative: object-cover edge-to-edge
+            //            on a dark stage, UNCHANGED (this is the Picture-21 Samsung look).
+            // art=false -> product-led slide: LIGHT stage so the studio photo's white
+            //            canvas is invisible (product bg == slide bg), product large and
+            //            bleeding right via object-CONTAIN (never cover -> no clipping).
             const isArt = !!slide.art;
             const prod = slide.products?.[0];
             const img = isArt ? slide.imageUrl : (prod?.image || slide.imageUrl);
@@ -106,7 +106,7 @@ export function HeroCarousel({ slides }: { slides: Slide[] }) {
                 className={`group relative block h-[180px] shrink-0 overflow-hidden rounded-xl shadow-sm ring-1 sm:h-[220px] lg:h-[280px] ${
                   isArt
                     ? "bg-gray-900 ring-black/5"
-                    : "bg-gradient-to-br from-[#0a1024] via-[#0e1b3a] to-[#15264d] ring-white/10"
+                    : "bg-gradient-to-r from-sky-50 via-white to-white ring-gray-200/70"
                 }`}
               >
                 {isArt ? (
@@ -127,62 +127,59 @@ export function HeroCarousel({ slides }: { slides: Slide[] }) {
                   </>
                 ) : (
                   <>
-                    {/* electric glow + light sweep in VoltKart blue (replaces the creative's
-                        orange streaks) + a grounding shadow under the product */}
-                    <span aria-hidden className="pointer-events-none absolute right-[-12%] top-1/2 size-[150px] -translate-y-1/2 rounded-full bg-[#2874f0]/40 blur-3xl sm:size-[200px] lg:size-[240px]" />
-                    <span aria-hidden className="pointer-events-none absolute inset-y-0 right-0 w-1/2 bg-gradient-to-l from-[#2874f0]/25 via-[#2874f0]/5 to-transparent" />
-                    <span aria-hidden className="pointer-events-none absolute bottom-3 right-[16%] h-3 w-[30%] -translate-x-1/2 rounded-[50%] bg-black/50 blur-md" />
+                    {/* soft VoltKart-blue depth glow, kept light so the white product
+                        canvas still merges with the stage (no dark box returns) */}
+                    <span aria-hidden className="pointer-events-none absolute right-[6%] top-1/2 size-[120px] -translate-y-1/2 rounded-full bg-[#2874f0]/10 blur-2xl sm:size-[150px]" />
 
                     <span className="relative z-10 flex h-full items-center gap-2 px-3 sm:gap-3 sm:px-5 lg:px-7">
-                      {/* LEFT: composed copy, reference order */}
+                      {/* LEFT: composed copy, reference order, dark-on-light */}
                       <span className="flex min-w-0 flex-1 flex-col justify-center">
                         {disc > 0 && (
-                          <span className="mb-1.5 inline-flex w-fit items-center rounded-full bg-yellow-400 px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wide text-[#0a1024] shadow sm:text-[10px]">
+                          <span className="mb-1.5 inline-flex w-fit items-center rounded-full bg-yellow-400 px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wide text-[#0a1024] shadow-sm sm:text-[10px]">
                             {disc}% OFF
                           </span>
                         )}
                         {prod?.brand && (
-                          <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/55 sm:text-[11px]">
+                          <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-gray-400 sm:text-[11px]">
                             {prod.brand}
                           </span>
                         )}
-                        <span className="mt-0.5 line-clamp-2 font-display text-[15px] font-extrabold leading-[1.1] text-white sm:line-clamp-3 sm:text-[18px] lg:text-[21px]">
+                        <span className="mt-0.5 line-clamp-2 font-display text-[15px] font-extrabold leading-[1.1] text-gray-900 sm:line-clamp-3 sm:text-[18px] lg:text-[21px]">
                           {slide.headline}
                         </span>
                         {specLine && (
                           <>
-                            <span className="mt-1 hidden line-clamp-1 text-[11px] text-white/60 sm:block sm:text-[12px]">
+                            <span className="mt-1 hidden line-clamp-1 text-[11px] text-gray-500 sm:block sm:text-[12px]">
                               {specLine}
                             </span>
-                            <span className="mt-1.5 hidden h-0.5 w-7 rounded-full bg-yellow-400/80 sm:block" />
+                            <span className="mt-1.5 hidden h-0.5 w-7 rounded-full bg-[#2874f0]/70 sm:block" />
                           </>
                         )}
                         <span className="mt-1.5 flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
-                          <span className="text-[15px] font-black leading-none tabular-nums text-white sm:text-[17px] lg:text-[19px]">
+                          <span className="text-[15px] font-black leading-none tabular-nums text-gray-900 sm:text-[17px] lg:text-[19px]">
                             {RUPEE}{Math.round(prod?.salePrice ?? 0).toLocaleString("en-IN")}
                           </span>
                           {disc > 0 && (
-                            <span className="text-[10px] font-bold text-yellow-300 sm:text-[11px]">
+                            <span className="text-[10px] font-bold text-emerald-600 sm:text-[11px]">
                               {disc}% off
                             </span>
                           )}
                         </span>
-                        <span className="mt-2 inline-flex w-fit items-center gap-1 rounded-md bg-white px-3 py-1.5 text-[11px] font-bold text-[#2874f0] shadow transition-transform group-hover:scale-105 sm:px-3.5 sm:py-2 sm:text-[12px]">
+                        <span className="mt-2 inline-flex w-fit items-center gap-1 rounded-md bg-[#2874f0] px-3 py-1.5 text-[11px] font-bold text-white shadow-sm transition-transform group-hover:scale-105 sm:px-3.5 sm:py-2 sm:text-[12px]">
                           Shop Now <ArrowRight className="size-3.5" />
                         </span>
                       </span>
 
-                      {/* RIGHT: contained product, glowing, like the creative - never cropped */}
-                      <span className="relative h-full w-[44%] shrink-0 sm:w-[42%]">
-                        <span className="absolute inset-0 grid place-items-center">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={img}
-                            alt={prod?.name || slide.headline}
-                            loading={idx === 0 ? "eager" : "lazy"}
-                            className="max-h-[82%] w-auto object-contain drop-shadow-[0_16px_30px_rgba(0,0,0,0.6)] transition-transform duration-500 group-hover:scale-[1.04]"
-                          />
-                        </span>
+                      {/* RIGHT: product large + bleeding, CONTAINED on the light stage so
+                          its white canvas is invisible and nothing is cropped */}
+                      <span className="relative grid h-full w-[56%] shrink-0 place-items-center sm:w-[54%] lg:w-[50%]">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={img}
+                          alt={prod?.name || slide.headline}
+                          loading={idx === 0 ? "eager" : "lazy"}
+                          className="max-h-[96%] w-auto max-w-full object-contain object-center drop-shadow-sm transition-transform duration-500 group-hover:scale-[1.04]"
+                        />
                       </span>
                     </span>
                   </>
