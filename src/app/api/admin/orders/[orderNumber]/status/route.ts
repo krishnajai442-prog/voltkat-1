@@ -71,7 +71,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ orderNumber: s
     } else if (updated.status === "OUT_FOR_DELIVERY") {
       await prisma.order.update({ where: { id: updated.id }, data: { outForDeliveryAt: now } });
     } else if (updated.status === "DELIVERED") {
-      await prisma.order.update({ where: { id: updated.id }, data: { deliveredAt: now } });
+      await prisma.order.update({ where: { id: updated.id }, data: { deliveredAt: now, deliveredByOtp: true } });
     } else if (updated.status === "CANCELLED") {
       await prisma.order.update({
         where: { id: updated.id },
