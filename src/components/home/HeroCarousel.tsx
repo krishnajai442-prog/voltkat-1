@@ -117,7 +117,7 @@ export function HeroCarousel({ slides }: { slides: Slide[] }) {
                       className="absolute inset-0 size-full object-cover object-center transition-transform duration-500 group-hover:scale-[1.02]"
                     />
                     <span className="absolute bottom-2 right-2 z-10 rounded bg-gray-200/80 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-gray-600">
-                      Ad
+                      Featured
                     </span>
                   </>
                 ) : (

@@ -18,22 +18,20 @@ type Ad = {
   price?: number | string;
   salePrice?: number | string;
   mrp?: number | string;
-  // optional: lights the bottom-right brand stamp the instant the random-ad route
-  // returns it (see the capture below). Absent => no stamp, never a guessed one.
-  brand?: string | null;
+  brand?: string | null; // route still returns it; intentionally NOT rendered here
 };
 
 /**
- * The feed's Featured slot, rebuilt to the reference creative composition (Picture 34):
- * one continuous left-blue -> white wash (NO left/right seam), the product BLED large to
- * the top/bottom/right edges over a real glow via object-CONTAIN on a white-terminating
- * panel (so a white-canvas studio JPG's own background == the stage and the photo-box
- * edge disappears), the price promoted to a hero number, a single muted disclosure chip,
- * the illustration micro-line, and an optional brand stamp. No eyebrow, no rating pill,
- * no fabricated feature callout, no "From" range - those would misrepresent our own
- * inventory. Data is one random active+in-stock product fetched per mount, so anything
- * published later is eligible on the next draw. Slot/margins/fetch unchanged => position
- * on the page is identical to before.
+ * The feed's Featured card, stripped to pure composition per the reference review:
+ * NO disclosure chip, NO illustration micro-line, NO brand stamp, NO radial glow
+ * (a blue glow behind a white-canvas JPG is exactly the seam/halo we are removing).
+ * The panel is a left blue wash that terminates to PURE WHITE before the product
+ * starts, so a white-canvas studio photo merges with the stage (its background ==
+ * the slide background) with zero rectangle; the product is enlarged and bled to the
+ * top/bottom/right via object-CONTAIN (never cover -> nothing cropped) with only a
+ * soft grounding shadow. Copy stays dark ink on the blue left. Data is one random
+ * active+in-stock product fetched per mount, so anything published later is eligible
+ * on the next draw. Slot / margins / fetch unchanged => page position identical.
  */
 export function DynamicAdSlot() {
   const [ad, setAd] = useState<Ad | null>(null);
@@ -62,7 +60,6 @@ export function DynamicAdSlot() {
   const price = ad ? Number(ad.price ?? ad.salePrice ?? 0) : 0;
   const mrp = ad ? Number(ad.mrp ?? price) : 0;
   const off = mrp > price ? Math.round(((mrp - price) / mrp) * 100) : 0;
-  const brand = ad?.brand ?? null;
 
   return (
     <section className="container-x mt-6 mb-8 md:mt-8 md:mb-10" aria-label="Featured">
@@ -71,50 +68,29 @@ export function DynamicAdSlot() {
       ) : ad ? (
         <Link
           href={href}
-          className="group relative flex min-h-[156px] items-center overflow-hidden rounded-2xl border border-gray-200/70 bg-gradient-to-r from-[#d9ebff] via-[#eef5ff] to-white p-4 no-underline shadow-sm transition-shadow hover:shadow-md sm:min-h-[184px] sm:p-6"
+          className="group relative flex min-h-[156px] items-center overflow-hidden rounded-2xl border border-gray-200/70 bg-[linear-gradient(to_right,#d7eaff_0%,#e9f2ff_36%,#ffffff_48%,#ffffff_100%)] p-4 no-underline shadow-sm transition-shadow hover:shadow-md sm:min-h-[184px] sm:bg-[linear-gradient(to_right,#d7eaff_0%,#e9f2ff_30%,#ffffff_42%,#ffffff_100%)] sm:p-6"
         >
-          {/* glow behind the product (the reference's radial), strong enough to read */}
-          <span
-            aria-hidden
-            className="pointer-events-none absolute right-[-6%] top-1/2 aspect-square w-[64%] -translate-y-1/2 rounded-full bg-[#2874f0]/14 blur-2xl"
-          />
-
-          {/* PRODUCT BLED to top/bottom/right over the white-terminating wash. The box
-              deliberately overflows the card (inset-y -10%, right -8%) and the card's
-              overflow-hidden clips the overhang -> the phone touches all three edges like
-              the laptop, with NO white photo-box. object-contain (not cover) so nothing
-              of the product is ever cropped; its white canvas merges with the white right. */}
-          <span className="pointer-events-none absolute inset-y-[-10%] -right-[8%] z-10 w-[54%] sm:w-[50%]">
+          {/* PRODUCT, bled large to top/bottom/right, CONTAINED on the white side so a
+              white-canvas photo has no edge and nothing is cropped. Soft grounding
+              shadow only (no halo) keeps it reading as a clean studio shot on white. */}
+          <span className="pointer-events-none absolute inset-y-[-6%] -right-[4%] z-10 grid w-[54%] place-items-center sm:-right-[6%] sm:w-[60%]">
             {ad.image ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={ad.image}
                 alt={ad.name ?? "Featured product"}
-                className="size-full object-contain object-center drop-shadow-xl transition-transform duration-500 group-hover:scale-[1.03]"
+                className="size-full object-contain object-center drop-shadow-[0_14px_24px_rgba(2,6,23,0.12)] transition-transform duration-500 group-hover:scale-[1.03]"
               />
             ) : (
-              <span className="grid size-full place-items-center text-[11px] font-bold text-gray-400">
-                {(ad.name ?? "AD").slice(0, 2).toUpperCase()}
+              <span className="grid size-full place-items-center text-[11px] font-bold text-gray-300">
+                {(ad.name ?? "").slice(0, 2).toUpperCase()}
               </span>
             )}
           </span>
 
-          {/* single muted disclosure chip - honest word ("Featured", not a paid "Ad"),
-              styled with the reference's restraint (light, small, top-right) */}
-          <span className="pointer-events-none absolute right-3 top-3 z-30 rounded bg-black/[0.06] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-gray-500">
-            Featured
-          </span>
-
-          {/* brand stamp bottom-right, like the reference's SAMSUNG - only when the route
-              actually returns a brand (never inferred from the name) */}
-          {brand && (
-            <span className="pointer-events-none absolute bottom-2.5 right-3 z-30 text-[11px] font-black uppercase tracking-[0.18em] text-gray-400 sm:text-[12px]">
-              {brand}
-            </span>
-          )}
-
-          {/* LEFT copy in flow, constrained so it never underlaps the bled product */}
-          <span className="relative z-20 flex w-[46%] min-w-0 flex-col justify-center sm:w-[44%]">
+          {/* LEFT copy in flow, constrained to the blue wash so it never underlaps the
+              white product zone. Dark ink, no chip above it, no micro-line below it. */}
+          <span className="relative z-20 flex w-[44%] min-w-0 flex-col justify-center sm:w-[38%]">
             <span className="block font-display text-[15px] font-extrabold leading-[1.12] text-gray-900 line-clamp-2 sm:text-[18px]">
               {ad.name ?? "Today's spotlight deal"}
             </span>
@@ -132,9 +108,6 @@ export function DynamicAdSlot() {
                   {ARROW}{off}%
                 </span>
               )}
-            </span>
-            <span className="mt-2.5 block text-[10px] leading-tight text-gray-400">
-              *Image for illustration.
             </span>
           </span>
         </Link>
