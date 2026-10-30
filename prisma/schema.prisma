@@ -234,6 +234,7 @@ model Product {
   screenSize       String?
   processor        String?
   color            String?
+  description      String?
   warrantyMonths   Int      @default(12)
   returnableDays   Int      @default(7)
   codEligible      Boolean  @default(true)

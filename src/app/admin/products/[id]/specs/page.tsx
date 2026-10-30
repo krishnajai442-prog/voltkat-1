@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { SpecEditor } from "@/components/admin/SpecEditor";
 import { ImageListEditor } from "@/components/admin/ImageListEditor";
+import { DescriptionEditor } from "@/components/admin/DescriptionEditor";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +27,7 @@ export default async function AdminProductDetailsPage({ params }: { params: Prom
     <div className="space-y-6 p-4 md:p-6">
       <h1 className="font-display text-xl font-bold text-gray-900">Product details — {product.name}</h1>
       <Section title="Specifications"><SpecEditor productId={product.id} kind="SPEC" initial={byKind("SPEC")} /></Section>
+      <Section title="Description"><DescriptionEditor productId={product.id} initial={product.description ?? ""} /></Section>
       <Section title="Warranty"><SpecEditor productId={product.id} kind="WARRANTY" initial={byKind("WARRANTY")} /></Section>
       <Section title="Manufacturer Info"><SpecEditor productId={product.id} kind="MFG" initial={byKind("MFG")} /></Section>
       <Section title="Showcase banners"><ImageListEditor productId={product.id} initial={banners} /></Section>
