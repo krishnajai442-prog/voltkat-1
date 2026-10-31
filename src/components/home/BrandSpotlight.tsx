@@ -6,7 +6,7 @@ export function BrandSpotlight({ title, items }: { title: string; items: Tile[] 
   return (
     <section className="rounded-2xl border border-gray-200 bg-white p-4">
       <h2 className="mb-3 font-display text-[15px] font-bold text-gray-900">{title}</h2>
-      <div className="space-y-3">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-4">
         {items.map((b, i) => (
           <Link key={i} href={b.href} className="relative flex h-28 items-end overflow-hidden rounded-xl border border-gray-100 bg-gray-900">
             {b.image

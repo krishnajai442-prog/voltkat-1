@@ -18,7 +18,7 @@ export function CollectionGrid({ title, tiles, tone = "plain", columns = 2, arro
         <h2 className="font-display text-[15px] font-bold text-gray-900">{title}</h2>
         {arrow ? <Link href={tiles[0]!.href} className="grid size-7 place-items-center rounded-full bg-gray-900 text-white"><ArrowRight className="size-4" /></Link> : null}
       </div>
-      <div className={`grid gap-3 ${columns === 4 ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-2"}`}>
+      <div className={`grid gap-3 ${columns === 4 ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-2 lg:grid-cols-4"}`}>
         {tiles.map((t, i) => (
           <Link key={i} href={t.href} className="flex flex-col overflow-hidden rounded-xl border border-gray-100 bg-white">
             <div className="aspect-square bg-gray-50">
