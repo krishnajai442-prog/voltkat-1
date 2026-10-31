@@ -38,7 +38,7 @@ export default async function EditProductPage({
         brands={brands}
         productId={product.id}
         canDelete={can.destroy(actor.role)}
-        footer={<ProductDetailEditors key="product-detail-editors" />}
+        footer={<ProductDetailEditors key="product-detail-editors" description={product.description ?? ""} />}
         initial={{
           name: product.name,
           slug: product.slug,
