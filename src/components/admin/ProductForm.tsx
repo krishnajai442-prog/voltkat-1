@@ -214,7 +214,6 @@ export function ProductForm({
         </Select>
         <Input label="Subtype" value={form.subtype} onChange={(e) => set("subtype", e.target.value)} placeholder="Smartphone / Ultrabook / AC" />
         <Input label="Family group (same value links colour/variant siblings)" value={form.groupId} onChange={(e) => set("groupId", e.target.value)} placeholder="iphone-16-plus" />
-        <Input containerClassName="sm:col-span-2" label="Short description" value={form.shortDescription} onChange={(e) => set("shortDescription", e.target.value)} maxLength={240} />
       </section>
 
       <section className="card grid gap-3 p-5 sm:grid-cols-3">

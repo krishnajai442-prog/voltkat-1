@@ -42,6 +42,7 @@ export async function generateMetadata({
       slug: true,
       name: true,
       shortDescription: true,
+      description: true,
       active: true,
       category: { select: { name: true } },
       brand: { select: { name: true } },
@@ -53,7 +54,7 @@ export async function generateMetadata({
     return { title: "Product not found" };
   }
 
-    const description = excerpt(product.shortDescription ?? product.name, 180);
+    const description = excerpt(product.description ?? product.shortDescription ?? product.name, 180);
 
   return {
     title: product.name,
@@ -455,7 +456,7 @@ export default async function ProductPage({
             screenSize={product.screenSize}
             processor={product.processor}
             color={product.color}
-            shortDescription={product.shortDescription}
+            shortDescription={(product.description ?? product.shortDescription ?? product.name ?? "").slice(0, 160)}
           />
 
           <DeliveryDetails returnableDays={product.returnableDays} />
