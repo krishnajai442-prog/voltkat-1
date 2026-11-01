@@ -41,7 +41,8 @@ export type HeroSlideVM = {
   products: HeroSlideProduct[];
 };
 
-export async function buildHeroSlides(take: number = 15): Promise<HeroSlideVM[]> {
+export async function buildHeroSlides(take: number = 15, opts?: { categorySlug?: string | null }): Promise<HeroSlideVM[]> {
+  const cat = opts?.categorySlug ?? null;
   const now = new Date();
 
   // 1. ADMIN CAMPAIGNS FIRST - the real table is heroSlide (NOT banner), kind:"CUSTOM",
@@ -54,6 +55,7 @@ export async function buildHeroSlides(take: number = 15): Promise<HeroSlideVM[]>
       AND: [
         { OR: [{ startsAt: null }, { startsAt: { lte: now } }] },
         { OR: [{ endsAt: null }, { endsAt: { gte: now } }] },
+        ...(cat ? [{ ctaHref: { contains: '/products/' + cat } }] : []),
       ],
     },
     orderBy: { sortOrder: "asc" },
@@ -111,7 +113,7 @@ export async function buildHeroSlides(take: number = 15): Promise<HeroSlideVM[]>
   if (remaining <= 0) return customSlides;
 
   const pool = await prisma.product.findMany({
-    where: { active: true, stock: { gt: 0 } },
+    where: cat ? { active: true, stock: { gt: 0 }, category: { slug: cat } } : { active: true, stock: { gt: 0 } },
     select: {
       id: true, name: true, slug: true,
       salePrice: true, mrp: true, discountPercent: true,
