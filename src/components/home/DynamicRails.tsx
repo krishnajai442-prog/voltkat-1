@@ -75,12 +75,12 @@ export function DynamicRails({
               </Link>
             </div>
 
-            <div className="no-scrollbar grid grid-cols-2 gap-3 p-3 bg-white sm:flex sm:overflow-x-auto">
+            <div className="no-scrollbar grid grid-cols-2 gap-3 p-3 bg-white sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
               {section.items.map((p: CardVM) => (
                 <Link
                   key={p.id}
                   href={`/product/${p.slug}`}
-                  className="group relative sm:w-[160px] sm:shrink-0"
+                  className="group relative"
                 >
                   <div className="relative mb-2 aspect-square overflow-hidden rounded-lg border border-gray-100 bg-gray-50">
                     <Image
